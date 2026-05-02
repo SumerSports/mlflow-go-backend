@@ -169,6 +169,13 @@ func (s TrackingSQLStore) logModelMetricsWithTransaction(
 	seenLoggedModelMetrics := make(map[models.LoggedModelMetric]struct{})
 
 	for _, metric := range metrics {
+		// Skip metrics with no associated model — mirrors the Python guard in
+		// sqlalchemy_store.py `if metric.model_id is None: continue`.
+		// Without this, an empty model_id violates the FK on logged_models.
+		if metric.ModelID == "" {
+			continue
+		}
+
 		currentMetric := models.NewLoggedMetricFromEntity(runID, metric)
 		if _, ok := seenLoggedModelMetrics[*currentMetric]; !ok {
 			seenLoggedModelMetrics[*currentMetric] = struct{}{}
